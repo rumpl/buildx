@@ -510,7 +510,7 @@ func toSolveOpt(ctx context.Context, di DriverInfo, multiDriver bool, opt Option
 			}
 		}
 		if e.Type == "image" && d.IsMobyDriver() {
-			opt.Exports[i].Type = "moby"
+			opt.Exports[i].Type = "image"
 			if e.Attrs["push"] != "" {
 				if ok, _ := strconv.ParseBool(e.Attrs["push"]); ok {
 					if ok, _ := strconv.ParseBool(e.Attrs["push-by-digest"]); ok {

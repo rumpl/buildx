@@ -58,7 +58,7 @@ func (d *Driver) Features() map[driver.Feature]bool {
 		driver.OCIExporter:    false,
 		driver.DockerExporter: false,
 		driver.CacheExport:    false,
-		driver.MultiPlatform:  false,
+		driver.MultiPlatform:  true,
 	}
 }
 
