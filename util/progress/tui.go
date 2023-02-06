@@ -18,6 +18,7 @@ type tuiWriter struct {
 	logsView *tview.TextView
 	vertices map[digest.Digest]*tview.TreeNode
 	logs     map[digest.Digest]string
+	selected *digest.Digest
 }
 
 func newTUIWriter() Writer {
@@ -59,6 +60,8 @@ func newTUIWriter() Writer {
 		if d == nil {
 			return
 		}
+		di := d.(digest.Digest)
+		tw.selected = &di
 		if lw, ok := tw.logs[d.(digest.Digest)]; ok {
 			if lw != "" {
 				tw.logsView.SetText(lw)
@@ -115,13 +118,15 @@ func (t *tuiWriter) Write(status *client.SolveStatus) {
 					a.SetColor(tcell.ColorRed)
 				}
 			} else {
-				node := tview.NewTreeNode(name).SetReference(v.Digest)
-				if v.Completed != nil {
-					node = node.SetColor(tcell.ColorBlue)
-				}
+				if v.Started != nil {
+					node := tview.NewTreeNode(name).SetReference(v.Digest)
+					if v.Completed != nil {
+						node = node.SetColor(tcell.ColorBlue)
+					}
 
-				t.tree.GetRoot().AddChild(node)
-				t.vertices[v.Digest] = node
+					t.tree.GetRoot().AddChild(node)
+					t.vertices[v.Digest] = node
+				}
 			}
 		}
 		for _, l := range status.Logs {
@@ -129,6 +134,18 @@ func (t *tuiWriter) Write(status *client.SolveStatus) {
 				t.logs[l.Vertex] = ""
 			}
 			t.logs[l.Vertex] += string(l.Data)
+		}
+		if t.selected != nil {
+			if lw, ok := t.logs[*t.selected]; ok {
+				if lw != "" {
+					t.logsView.SetText(lw)
+				} else {
+					t.logsView.SetText("No logs...")
+				}
+			} else {
+				t.logsView.SetText("No logs...")
+			}
+			t.logsView.ScrollToEnd()
 		}
 	})
 }
