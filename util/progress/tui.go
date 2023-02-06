@@ -10,47 +10,67 @@ import (
 	"github.com/rivo/tview"
 )
 
-const width = 160
+const width = 60
 
 type tuiWriter struct {
 	app      *tview.Application
 	tree     *tview.TreeView
+	logsView *tview.TextView
 	vertices map[digest.Digest]*tview.TreeNode
+	logs     map[digest.Digest]string
 }
 
 func newTUIWriter() Writer {
-	newPrimitive := func(text string) tview.Primitive {
-		return tview.NewTextView().SetTextAlign(tview.AlignCenter).SetText(text)
-	}
-
-	// menu := newPrimitive("Stages")
-	main := newPrimitive("Logs")
-
-	rootDir := "."
+	app := tview.NewApplication()
+	rootDir := "Build stages"
 	root := tview.NewTreeNode(rootDir).
 		SetColor(tcell.ColorRed)
 	tree := tview.NewTreeView().
 		SetRoot(root).
 		SetCurrentNode(root)
 
-	// main.AddItemDir(tree)
 	grid := tview.NewGrid().SetRows(1).SetColumns(width, 0).SetBorders(true)
+	textView := tview.NewTextView().
+		SetDynamicColors(true).
+		SetRegions(true).
+		SetWordWrap(true).
+		SetChangedFunc(func() {
+			app.Draw()
+		})
 
-	grid.AddItem(tree, 1, 0, 1, 1, 0, 0, false).AddItem(main, 1, 1, 1, 1, 0, 0, false)
+	grid.AddItem(tree, 1, 0, 1, 1, 0, 0, false).AddItem(textView, 1, 1, 1, 1, 0, 0, false)
 
-	app := tview.NewApplication().SetRoot(grid, true).EnableMouse(true)
+	app.SetRoot(grid, true).EnableMouse(true)
 
 	go func() {
 		if err := app.Run(); err != nil {
 			panic(err)
 		}
 	}()
-
-	return &tuiWriter{
+	tw := &tuiWriter{
 		app:      app,
 		tree:     tree,
 		vertices: map[digest.Digest]*tview.TreeNode{},
+		logs:     map[digest.Digest]string{},
+		logsView: textView,
 	}
+	tree.SetSelectedFunc(func(node *tview.TreeNode) {
+		d := node.GetReference()
+		if d == nil {
+			return
+		}
+		if lw, ok := tw.logs[d.(digest.Digest)]; ok {
+			if lw != "" {
+				tw.logsView.SetText(lw)
+			} else {
+				tw.logsView.SetText("No logs...")
+			}
+		} else {
+			tw.logsView.SetText("No logs...")
+		}
+	})
+
+	return tw
 }
 
 // ClearLogSource implements Writer
@@ -95,7 +115,7 @@ func (t *tuiWriter) Write(status *client.SolveStatus) {
 					a.SetColor(tcell.ColorRed)
 				}
 			} else {
-				node := tview.NewTreeNode(name)
+				node := tview.NewTreeNode(name).SetReference(v.Digest)
 				if v.Completed != nil {
 					node = node.SetColor(tcell.ColorBlue)
 				}
@@ -103,6 +123,12 @@ func (t *tuiWriter) Write(status *client.SolveStatus) {
 				t.tree.GetRoot().AddChild(node)
 				t.vertices[v.Digest] = node
 			}
+		}
+		for _, l := range status.Logs {
+			if _, ok := t.logs[l.Vertex]; !ok {
+				t.logs[l.Vertex] = ""
+			}
+			t.logs[l.Vertex] += string(l.Data)
 		}
 	})
 }
