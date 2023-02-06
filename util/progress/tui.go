@@ -54,7 +54,7 @@ func newTUIWriter() Writer {
 		logs:     map[digest.Digest]string{},
 		logsView: textView,
 	}
-	tree.SetSelectedFunc(func(node *tview.TreeNode) {
+	tree.SetChangedFunc(func(node *tview.TreeNode) {
 		d := node.GetReference()
 		if d == nil {
 			return
