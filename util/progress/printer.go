@@ -20,6 +20,7 @@ const (
 	PrinterModeTty   = "tty"
 	PrinterModePlain = "plain"
 	PrinterModeQuiet = "quiet"
+	PrinterModeTui   = "tui"
 )
 
 type Printer struct {
@@ -70,7 +71,7 @@ func (p *Printer) ClearLogSource(v interface{}) {
 	}
 }
 
-func NewPrinter(ctx context.Context, w io.Writer, out console.File, mode string) (*Printer, error) {
+func NewPrinter(ctx context.Context, w io.Writer, out console.File, mode string) (Writer, error) {
 	statusCh := make(chan *client.SolveStatus)
 	doneCh := make(chan struct{})
 
@@ -86,6 +87,8 @@ func NewPrinter(ctx context.Context, w io.Writer, out console.File, mode string)
 
 	var c console.Console
 	switch mode {
+	case PrinterModeTui:
+		return newTUIWriter(), nil
 	case PrinterModeQuiet:
 		w = io.Discard
 	case PrinterModeAuto, PrinterModeTty:

@@ -12,6 +12,8 @@ type Writer interface {
 	Write(*client.SolveStatus)
 	ValidateLogSource(digest.Digest, interface{}) bool
 	ClearLogSource(interface{})
+	Wait() error
+	Warnings() []client.VertexWarning
 }
 
 func Write(w Writer, name string, f func() error) {
