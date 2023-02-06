@@ -24,8 +24,7 @@ type tuiWriter struct {
 func newTUIWriter() Writer {
 	app := tview.NewApplication()
 	rootDir := "Build stages"
-	root := tview.NewTreeNode(rootDir).
-		SetColor(tcell.ColorRed)
+	root := tview.NewTreeNode(rootDir)
 	tree := tview.NewTreeView().
 		SetRoot(root).
 		SetCurrentNode(root)
